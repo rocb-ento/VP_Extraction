@@ -457,4 +457,3 @@ def time_height_cvp(radar, vp, col_radius, field_list, tix,
                                          rixs, azixs, all_bin_indexes,
                                          azimuth_exclude = azimuth_exclude)
 
-

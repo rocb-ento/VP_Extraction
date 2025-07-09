@@ -34,7 +34,7 @@ import h5py as h5
 
 import vp_functions
 import vp_io
-from vp import *
+from vp import *  
 import read_config
 import vp_grid_functions
 
@@ -122,7 +122,7 @@ def get_file_list(input_dir,
 
     if verbose:
         print("file_list")
-        print(file_list)
+        #print(file_list)
         if file_list:
             print('First file is:', file_list[0])
             print('Last file is:', file_list[-1])
@@ -145,11 +145,17 @@ def main():
 
     # True if the data are from the met office radar
     met_office = config['MET_OFFICE']
+    # True if the data are from the jaraguari radar
+    jaraguari = config['JARAGUARI']
 
     # Profile type (QVP or CVP)
     profile_type = config['PROFILE_TYPE']
-    
-    input_dir=os.path.join(config['DATA_INPUT'],args.radar_name,str(t_datetime.year))   
+
+    if  jaraguari:
+       input_dir=os.path.join(config['DATA_INPUT'])   
+    else: 
+        input_dir=os.path.join(config['DATA_INPUT'],args.radar_name,str(t_datetime.year))   
+
     # Check if input directory exists
     if not os.path.exists(input_dir):
         err_msg = "Input dir {0} does not exist\n"
@@ -180,7 +186,6 @@ def main():
                               args.timestamp,
                               met_office,
                               verbose)
-
     # read the files one at a time and one time from them at a time
     defaulttime = [dt.datetime(1970,1,1,0,0,0)]
     if(met_office):
@@ -190,7 +195,6 @@ def main():
         file_list = list(itertools.chain.from_iterable(itertools.repeat(x, len(times)) for x in file_list))
         testfile.close()
     else:
-        # there will be files with each time for the day
         times = [defaulttime]
 
     vps=[]
@@ -199,6 +203,16 @@ def main():
     short_names = []
     ntimes=len(file_list)
     for f, file_ in enumerate(file_list):
+        if(jaraguari): # get the times from the file names if jaraguari
+            times = []
+            filename = os.path.basename(file_) # e.g: "/gws/smf/j07/ncas_radar/Brazil/RadxConvert_output/20200816/cfrad.20200816_232403.000_to_20200816_232907.822_Jaraguari_SUR.nc"
+            scanstart = filename.split('to')[0].replace("cfrad.", "")  
+            date = scanstart.split("_")[0]  
+            time = scanstart.split("_")[1].split(".")[0]  
+            datetime = date + time 
+            datetime = dt.datetime.strptime(datetime, "%Y%m%d%H%M%S")
+            times.append(datetime)
+
         if (verbose):
             print ("file f {} is {}".format(f,file_))
 
@@ -206,7 +220,7 @@ def main():
         (radar, unit_dict, long_names, short_names) = \
             vp_io.read_file(f, times[f%len(times)], file_list[f], config['LOG_OUTPUT'], config['FIELD_LIST'], unit_dict,
                       long_names, short_names, met_office=met_office, verbose=verbose)
-
+        # preprocessing fails
         radar_lat, radar_lon=vp_functions.get_centre_lat_lon_for_radar(radar)
         if verbose:
             print('radar at lat lon', radar_lat, radar_lon)
@@ -292,8 +306,10 @@ def main():
                                                  f,
                                                  equidistant_bound,
                                                  verbose=verbose)
+                    print("vp_functions.time_height_cvp.. done ")
             for item, specific_cvp in enumerate(config['SPECIFIC_CVP']):
                 if f==0:
+                    print(1)
                     site_name='{}_{}'.format(args.radar_name, specific_cvp[2])
                     this_output_dir=output_dir+site_name+'/{}/'.format(t_datetime.year)
                     if not os.path.exists(this_output_dir):

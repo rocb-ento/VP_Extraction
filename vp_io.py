@@ -526,7 +526,10 @@ def read_file(f, time, file_, log_file, fields,unit_dict=[],long_names=[], short
         radar = read_nimrod_aggregated_odim_h5(file_,data_type,time, log_file)
         radar = named_fields(radar)
     else:
-        radar = read(file_)
+        radar = read(file_) #pyart.io read if file is nc 
+        print("Radar site:", radar.metadata.get('instrument_name', 'Unknown'))
+        print("Available fields:", list(radar.fields.keys()))
+        print("Radar location:", radar.latitude['data'][0], radar.longitude['data'][0])
 
     if f == 0:
         unit_dict = return_units(radar, fields)

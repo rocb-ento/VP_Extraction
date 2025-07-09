@@ -13,7 +13,7 @@ def read_config(cfg_file):
     config={}
     specific_cvps=[]
     azimuths_to_exclude=[]
-    required_keys=['LOG_OUTPUT', 'DATA_INPUT', 'DATA_OUTPUT', 'MET_OFFICE', 'PROFILE_TYPE', 'FIELD_LIST']
+    required_keys=['LOG_OUTPUT', 'DATA_INPUT', 'DATA_OUTPUT', 'MET_OFFICE', 'PROFILE_TYPE', 'FIELD_LIST', 'JARAGUARI']
     qvp_keys=['ELEVATIONS', 'AZIMUTHS_TO_EXCLUDE']
     cvp_keys=['COL_RADIUS', 'MAX_RADIUS', 'MIN_H', 'MAX_H', 'H_STEP', 'CREATE_CVP_GRID', 'SPECIFIC_CVP']
     with open(cfg_file,"r") as f:

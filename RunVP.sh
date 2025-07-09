@@ -18,9 +18,10 @@ function usage {
           exit $1;
 }
 
+
 verbose="false"
 
-while getopts ":r:s:e:c" flag; do
+while getopts ":r:s:e:c:" flag; do
     case "${flag}" in
         r)
             r=${OPTARG}
@@ -50,6 +51,7 @@ while getopts ":r:s:e:c" flag; do
     esac
 done
 shift $((OPTIND-1))
+echo "CONFIG FILE PATH: '$c'" # echo the file path
 
 #Requires all these arguments
 if [ -z "${r}" ] || [ -z "${s}" ] || [ -z "${e}" ] ||  [ -z "${c}" ]; then
@@ -76,12 +78,13 @@ date1_formatted=$( date -u -d @${date1} +'%Y%m%d')
 Max_iter=$(( $date_len ))
 mkdir -p Output
 this_date=$date1_formatted
-for ((i=1; i<=Max_Iter; i++))
+# creates a slurm job for each date between the specified dates, passes this date as -t to vp_extraction
+for ((i=1; i<=Max_iter; i++)) # changed case
 do
     args=''
     if [ verbose ]; then args='-v'; fi
-    
-    sbatch --account=ncas_radar --partition=standard --time=04:00:00 --output=Output/$r_${this_date}.out  --job-name=$r_${this_date} --wrap="vp_extraction.py -r $r -t $this_date -c $c $args" 
+    # added QOS
+    sbatch --account=ncas_radar --partition=standard --qos=standard --time=04:00:00 --mem=10G --output=Output/$r_${this_date}.out  --job-name=$r_${this_date} --wrap="python /gws/nopw/j04/ncas_radar_vol1/reuben/brazil/cemac_code/vp_extraction.py -r $r -t $this_date -c $c $args" 
     this_date=$(date +"%Y%m%d" -d "$this_date + 1 day")
 
 done

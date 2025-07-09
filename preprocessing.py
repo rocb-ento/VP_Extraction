@@ -59,36 +59,38 @@ def kdp_ukmo(radar,
     flags = np.zeros((elev, rays, bins))
 
     # generate non-meteo mask:
-    #print 'generating non-meteo mask ...'
+    print('generating non-meteo mask ...') # fails for brazil data here
     (meteoMask) = kdpfun.generate_meteo_mask(elev, rays, bins, flags, rhohv, METEO_THRESH)
+    print('finished generating non-meteo mask ...') 
     radar.add_field_like(phidpfield, 'meteoMask', meteoMask)
+    print('added field meteoMask') 
 
     # remove phi_dp wrap-around:
-    #print 'unwrapping phidp ...'
+    print('unwrapping phidp ...')
     (phidp_unwrap) = kdpfun.unwrap_phidp(elev, rays, bins, meteoMask, phidp)
 
     # remove non-meteo data / filter phi_dp:
-    #print 'cleaning / filtering phi_dp ...'
+    print('cleaning / filtering phi_dp ...')
     (phidp_meteo) = kdpfun.clean_phidp(elev, rays, bins, phidp_unwrap, meteoMask,
                                 FILTER_BINS_1)
 
     # generate non-rain mask:
-    #print 'generating non-rain mask ...'
+    print('generating non-rain mask ...')
     (rainMask) = kdpfun.generate_rain_mask(elev, rays, bins, rhohv, RAIN_THRESH)
 
     # remove non-rain data / filter phi_dp:
-    #print 'removing non-rain components from phidp ...'
+    print('removing non-rain components from phidp ...')
     (phidp_rain) = kdpfun.clean_phidp(elev, rays, bins, phidp_meteo, rainMask,
                                FILTER_BINS_2)
 
     # smooth phi_dp (twice):
-    #print 'smoothing phi_dp ...'
+    print('smoothing phi_dp ...')
     (phidp_smooth) = kdpfun.smooth_data(elev, rays, bins, phidp_rain, SMOOTH_BINS_1)
     (phidp_smooth) = kdpfun.smooth_data(elev, rays, bins, phidp_smooth, SMOOTH_BINS_2)
     radar.add_field_like(phidpfield, 'sPhiDP', phidp_smooth)
 
     # calculate kdpfun:
-    #print 'calculating kdpfun ...'
+    print('calculating kdpfun ...')
     (kdp) = kdpfun.calc_kdp_v3(elev, rays, bins, binlength, phidp_smooth, rainMask)
 
     radar.add_field_like(phidpfield, 'KDP_UKMO', np.ma.masked_array(data=kdp,
@@ -186,16 +188,16 @@ def preprocessing(radar, vp_mode):
             try:
                 kdp_ukmo(radar)
             except:
-                print ('kdp_ukmo failed')
+                print ('kdp_ukmo failed (1)')
                 raise
         elif 'RhoHV' in radar.fields.keys() and 'uPhiDP' not in radar.fields.keys() and 'PhiDP' in radar.fields.keys():
             try:
                 kdp_ukmo(radar,phidpfield='PhiDP')
             except:
-                print ('kdp_ukmo failed')
+                print ('kdp_ukmo failed (2)')
                 raise
         else:
-            print ('kdp_ukmo failed')
+            print ('kdp_ukmo failed (3)')
 
     psidp_field = 0.632 * (copy.deepcopy(radar.fields['ZDR']['data'])) ** 1.71
 
