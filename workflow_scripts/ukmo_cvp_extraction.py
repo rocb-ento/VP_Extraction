@@ -207,7 +207,7 @@ def main():
                 site_name='{}_GridID_{:03d}'.format(args.radar_name, gid+1)
                 this_output_dir=output_dir+site_name+'/{}/'.format(t_datetime.year)
                 if not os.path.exists(this_output_dir):
-                    os.makedirs(this_output_dir)
+                    os.makedirs(this_output_dir, exist_ok=True)
                 output_file=this_output_dir+'{}_{}km_{}.nc'.format(site_name,
                                                                     config['COL_RADIUS'],
                                                                     args.timestamp)
@@ -228,7 +228,7 @@ def main():
             site_name='{}_{}'.format(args.radar_name, specific_cvp[2])
             this_output_dir=output_dir+site_name+'/{}/'.format(t_datetime.year)
             if not os.path.exists(this_output_dir):
-                os.makedirs(this_output_dir)
+                os.makedirs(this_output_dir, exist_ok=True)
             output_file=this_output_dir+'/{}_{}km_{}.nc'.format(site_name,
                                                                 config['COL_RADIUS'],
                                                                 args.timestamp)
