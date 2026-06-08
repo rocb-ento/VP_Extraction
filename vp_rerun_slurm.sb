@@ -1,0 +1,22 @@
+#!/bin/bash -l
+#SBATCH --account=ncas_radar
+#SBATCH --partition=standard
+#SBATCH --qos=standard
+#SBATCH --job-name=Chenies_rerun
+#SBATCH --time=4:00:00
+#SBATCH --output=Output/Chenies_rerun_%A_%a.out
+#SBATCH --array=0-30
+#SBATCH --mem=2G
+
+source activate DRUID_VP
+
+# Look up the date for this array task from the explicit list
+dates=(20140113 20140114 20140115 20140116 20140122 20140125 20140126 20140213 20140228 20140305 20140313 20140317 20140322 20140324 20140329 20140402 20140406 20140409 20140411 20140415 20140421 20140422 20140425 20140426 20140501 20140502 20140503 20140504 20140505 20140509 20140513)
+this_date=${dates[$SLURM_ARRAY_TASK_ID]}
+
+echo "Rerunning date: ${this_date} (task $SLURM_ARRAY_TASK_ID)"
+
+# Rename log to include date
+mv Output/Chenies_rerun_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out    Output/Chenies_rerun_${SLURM_ARRAY_JOB_ID}_${this_date}.out 2>/dev/null || true
+
+python ./workflow_scripts/ukmo_cvp_extraction.py -r Chenies -t ${this_date} -c ./config/chenies_cvp_harpenden_save_to_gws.cfg

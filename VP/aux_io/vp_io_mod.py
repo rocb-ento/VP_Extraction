@@ -126,14 +126,21 @@ def read_nimrod_aggregated_odim_h5(filename,data_type, time, log_file, field_nam
     with h5py.File(filename, 'r') as hfile:
         try:
             hfile=hfile[data_type][time]
-        except:
+        except KeyError:
+            # Log an informative message when data_type or time key is not found in the HDF5 file.
+            # This commonly occurs with pre-2015 NIMROD files which use 'sp' instead of 'lp'
+            # at the top level, causing a KeyError when 'lp' is requested.
+            with h5py.File(filename, 'r') as hfile_check:
+                available_groups = list(hfile_check.keys())
             with open(log_file, 'a') as log:
-                log.write(datetime.datetime.today().strftime('%Y-%m-%d %H:%M: ')+'No Data '+data_type+' for '+time+' in '+filename+ '\n')
-                raise Exception(filename+' cannot read {} for time {}'.format(data_type, time))
-
-        odim_object = _to_str(hfile['what'].attrs['object'])
-        if odim_object not in ['PVOL', 'SCAN', 'ELEV', 'AZIM']:
-            raise NotImplementedError('object: %s not implemented.' % (odim_object))
+                log.write(
+                    datetime.datetime.today().strftime('%Y-%m-%d %H:%M: ') +
+                    'KeyError: data_type \'' + data_type + '\' or time \'' + time +
+                    '\' not found in ' + filename +
+                    '. Available top-level groups: ' + str(available_groups) +
+                    '. This may indicate an older HDF5 format (e.g. sp instead of lp).\n'
+                )
+            raise
 
         # determine the number of sweeps by the number of groups which
         # begin with dataset
@@ -168,6 +175,9 @@ def read_nimrod_aggregated_odim_h5(filename,data_type, time, log_file, field_nam
         h_what = hfile['what'].attrs
         metadata['version'] = 'nimrod_test'#_to_str(h_what['version']) ####Need to talk to josh about it
         metadata['source'] = _to_str(h_what['source'])
+
+        # Read the ODIM object type from the file (e.g. PVOL, SCAN, AZIM, ELEV)
+        odim_object = _to_str(h_what['object']) if 'object' in h_what else 'PVOL'
 
         try:
             ds1_how = hfile[datasets[0]]['how'].attrs
@@ -539,3 +549,7 @@ def read_file(f, time, file_, log_file, fields,unit_dict=[],long_names=[], short
 #         if not vp_mode=='QVP': shift_ppi(radar,fields)
 #     except:
 #         print('Preprocessing failed for', file_)
+
+    
+
+

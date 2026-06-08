@@ -161,7 +161,7 @@ def main():
         ngrids=0
 
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
         
     # File list
     file_list = get_file_list(input_dir,
