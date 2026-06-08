@@ -78,11 +78,22 @@ cat > vp_slurm.sb <<-EOF
 #SBATCH --qos=standard
 #SBATCH --job-name=${r}              # Job name
 #SBATCH --time=4:00:00             # Time limit per array task hrs:min:sec
-#SBATCH --output=Output/${r}_%j-%A_%a.out       # Standard output and error log
+#SBATCH --output=Output/${r}_%A_%a.out       # Standard output and error log
 #SBATCH --array=0-$Max_iter              # Array range
 #SBATCH --mem=2G
 
-source activate VP_env
+source activate DRUID_VP
+
+# Calculate the date for this array task
+this_date=${s}
+if (( \$SLURM_ARRAY_TASK_ID > 0 )); then
+    this_date=\$(date -d "${s} + \$SLURM_ARRAY_TASK_ID day" +'%Y%m%d')
+fi
+
+# Rename the log file to include the date once we know it (For purpose of checking which array jobs failed)
+mv Output/${r}_\${SLURM_ARRAY_JOB_ID}_\${SLURM_ARRAY_TASK_ID}.out \
+   Output/${r}_\${SLURM_ARRAY_JOB_ID}_\${this_date}.out 2>/dev/null || true
+
 source ./automation_scripts/VP_Main.sh ${r} ${s} ${c} \$SLURM_ARRAY_TASK_ID 
 EOF
 
