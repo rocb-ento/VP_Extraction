@@ -25,8 +25,39 @@ sacct -j 30280650 --format=JobID,State --noheader | grep -E "^[0-9]+_[0-9]+[[:sp
 sacct -j 30283844 --format=JobID,State --noheader | grep -E "^[0-9]+_[0-9]+[[:space:]]" | awk '{print $2}' | sort | uniq -c
 ./automation_scripts/check_failed_jobs.sh -j 30283844 -r Chenies -s 20140101 -c ./config/chenies_cvp_harpenden_save_to_gws.cfg -d -x
 
-##################### running now for watford to check everything works OK
 
-./automation_scripts/RunVP.sh -r Chenies -s 20140101 -e 20150421 -c ./config/chenies_cvp_watford_save_to_gws.cfg
-sacct -j 30301555 --format=JobID,State --noheader | grep -E "^[0-9]+_[0-9]+[[:space:]]" | awk '{print $2}' | sort | uniq -c
-./automation_scripts/check_failed_jobs.sh -j 30301555 -r Chenies -s 20140101 -c ./config/chenies_cvp_watford_save_to_gws.cfg -d 
+
+##################### test run for watford to check everything works OK
+# 9 failures in initial run - caused by missing times within files 
+./automation_scripts/RunVP.sh -r Chenies -s 20150101 -e 20150421 -c ./config/chenies_cvp_watford_save_to_gws.cfg
+sacct -j 30304234 --format=JobID,State --noheader | grep -E "^[0-9]+_[0-9]+[[:space:]]" | awk '{print $2}' | sort | uniq -c
+./automation_scripts/check_failed_jobs.sh -j 30304234 -r Chenies -s 20150101 -c ./config/chenies_cvp_watford_save_to_gws.cfg -d 
+## seems to work ok
+# we get this 20150212: KeyError: 'Unable to synchronously open object (component not found)'
+
+#### run a 1km CVP for RR
+./automation_scripts/RunVP.sh -r Chenies -s 20140101 -e 20260421 -c ./config/chenies_cvp_harpenden_1km_save_to_gws.cfg
+sacct -j 30313431 --format=JobID,State --noheader | grep -E "^[0-9]+_[0-9]+[[:space:]]" | awk '{print $2}' | sort | uniq -c
+
+
+
+## broken file
+source activate DRUID_VP && python -c "
+import h5py
+f = h5py.File('/gws/ssde/j25a/ncas_radar/vol2/avocet/ukmo-nimrod/raw_h5_data_final/single-site/chenies/2015/20150212_polar_pl_radar05_aggregate.h5', 'r')
+print('top level keys:', list(f.keys()))
+print('lp keys count:', len(list(f['lp'].keys())))
+print('keys under lp/0000:', list(f['lp']['0000'].keys()))
+print('keys under lp/0000/dataset1:', list(f['lp']['0000']['dataset1'].keys()))
+"
+# working file 
+source activate DRUID_VP && python -c "
+import h5py
+f = h5py.File('/gws/ssde/j25a/ncas_radar/vol2/avocet/ukmo-nimrod/raw_h5_data_final/single-site/chenies/2015/20150110_polar_pl_radar05_aggregate.h5', 'r')
+print('top level keys:', list(f.keys()))
+print('lp keys count:', len(list(f['lp'].keys())))
+print('keys under lp/0000:', list(f['lp']['0000'].keys()))
+print('keys under lp/0000/dataset1:', list(f['lp']['0000']['dataset1'].keys()))
+"
+
+VP_Extraction/Output/30304234/Chenies_30304234_20150110.out
