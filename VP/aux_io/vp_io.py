@@ -126,10 +126,39 @@ def read_nimrod_aggregated_odim_h5(filename,data_type, time, log_file, field_nam
     with h5py.File(filename, 'r') as hfile:
         try:
             hfile=hfile[data_type][time]
-        except:
+        except KeyError:
+            # (BY CLAUDE) Two distinct failure modes are handled here:
+            # 1. data_type (e.g. 'lp') is missing from the file entirely.
+            #    This occurs with older format files (pre-2015) which use 'sp'
+            #    instead of 'lp' at the top level.
+            # 2. The requested time key (e.g. '0000') does not exist under
+            #    data_type. This occurs when the radar was offline for part of
+            #    the day and the file only contains a subset of timesteps.
+            with h5py.File(filename, 'r') as hfile_check:
+                available_groups = list(hfile_check.keys())
+                if data_type not in hfile_check:
+                    # Case 1: data_type group missing entirely - likely old format
+                    reason = (
+                        "data_type '{}' not found in top-level groups {}. "
+                        "This may indicate an older HDF5 format (e.g. sp instead of lp)."
+                        .format(data_type, available_groups)
+                    )
+                else:
+                    # Case 2: time key missing - radar likely offline at this time
+                    available_times = list(hfile_check[data_type].keys())
+                    reason = (
+                        "time '{}' not found under '{}'. "
+                        "File contains {} timesteps ({} to {}). "
+                        "Radar was likely offline at this time."
+                        .format(time, data_type, len(available_times),
+                                available_times[0], available_times[-1])
+                    )
             with open(log_file, 'a') as log:
-                log.write(datetime.datetime.today().strftime('%Y-%m-%d %H:%M: ')+'No Data '+data_type+' for '+time+' in '+filename+ '\n')
-                raise Exception(filename+' cannot read {} for time {}'.format(data_type, time))
+                log.write(
+                    datetime.datetime.today().strftime('%Y-%m-%d %H:%M: ') +
+                    'KeyError in ' + filename + ': ' + reason + '\n'
+                )
+            raise Exception(filename + ' cannot read {} for time {}: '.format(data_type, time) + reason)
 
         odim_object = _to_str(hfile['what'].attrs['object'])
         if odim_object not in ['PVOL', 'SCAN', 'ELEV', 'AZIM']:
