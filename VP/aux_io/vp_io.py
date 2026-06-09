@@ -265,6 +265,24 @@ def read_nimrod_aggregated_odim_h5(filename,data_type, time, log_file, field_nam
 
         # range
         _range = filemetadata('range')
+
+        # Guard against missing dataset1 — some timesteps within a valid file
+        # are missing the lowest elevation scans (dataset1, dataset2) 
+        # add an informative error message
+        if 'dataset1' not in hfile:
+            reason = (
+                "dataset1 missing from timestep '{}' in {}. "
+                "Available datasets: {}. "
+                "Lowest elevation scans were likely not recorded for this period."
+                .format(time, filename, [k for k in hfile if k.startswith('dataset')])
+            )
+            with open(log_file, 'a') as log:
+                log.write(
+                    datetime.datetime.today().strftime('%Y-%m-%d %H:%M: ') +
+                    reason + '\n'
+                )
+            raise Exception(reason)
+
         if 'rstart' in hfile['dataset1/where'].attrs:
             # derive range from rstart and rscale attributes if available
 
